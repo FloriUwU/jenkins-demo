@@ -5,7 +5,7 @@ pipeline {
 
         stage('Code prüfen') {
             steps {
-                echo 'Code wurde von GitHub geladen.'
+                echo 'Jenkins hat den Code von GitHub geladen!'
             }
         }
 
