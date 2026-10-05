@@ -73,3 +73,4 @@ while True:
     print("Warte 60 Sekunden...")
 
     time.sleep(60)
+# Automatischer Jenkins-Polling-Test
