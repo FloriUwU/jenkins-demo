@@ -13,6 +13,7 @@ pipeline {
             steps {
                 sh 'python3 -m py_compile app.py'
                 sh 'python3 -m py_compile webapp.py'
+		sh 'exit 1'
             }
         }
 
