@@ -1,0 +1,44 @@
+services:
+
+  db:
+    image: postgres:16
+    container_name: netwatch-db
+
+    environment:
+      POSTGRES_DB: netwatch
+      POSTGRES_USER: netwatch
+      POSTGRES_PASSWORD: netwatchpass
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    networks:
+      - netwatch
+
+
+  app:
+    build: .
+    container_name: netwatch-app
+
+    depends_on:
+      - db
+
+    environment:
+      DB_HOST: db
+      DB_NAME: netwatch
+      DB_USER: netwatch
+      DB_PASSWORD: netwatchpass
+
+    ports:
+      - "5000:5000"
+
+    networks:
+      - netwatch
+
+
+volumes:
+  postgres_data:
+
+
+networks:
+  netwatch:
