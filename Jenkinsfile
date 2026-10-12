@@ -23,23 +23,23 @@ pipeline {
         }
 
         stage('Deploy') {
-  steps {
-    withCredentials([string(credentialsId: 'netwatch-db-password', variable: 'DB_PASSWORD')]) {
-      sh 'docker rm -f netwatch-app || true'
-      sh '''
-        docker run -d \
-          --name netwatch-app \
-          --network netwatch_netwatch \
-          -p 5000:5000 \
-          -e DB_HOST=netwatch-db \
-          -e DB_NAME=netwatch \
-          -e DB_USER=netwatch \
-          -e DB_PASSWORD="$DB_PASSWORD" \
-          netwatch_app:latest
-      '''
-    }
-  }
-}
+          steps {
+            withCredentials([string(credentialsId: 'netwatch-db-password', variable: 'DB_PASSWORD')]) {
+              sh 'docker rm -f netwatch-app || true'
+              sh '''
+                 docker run -d \
+                  --name netwatch-app \
+                  --network netwatch_netwatch \
+                  -p 5000:5000 \
+                  -e DB_HOST=netwatch-db \
+                  -e DB_NAME=netwatch \
+                  -e DB_USER=netwatch \
+                  -e DB_PASSWORD="$DB_PASSWORD" \
+                  netwatch_app:latest
+              '''
+            }
+          }
+        }
 
         stage('Check') {
             steps {
