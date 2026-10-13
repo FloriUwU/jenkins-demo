@@ -1,34 +1,65 @@
+# NetWatch – Docker Compose
+#
+# Definiert die Datenbank (db) und die App (app) in einem gemeinsamen Netzwerk.
+# Das DB-Passwort steht nicht in dieser Datei, sondern kommt aus der Datei .env
+# im selben Ordner (DB_PASSWORD=...). Die .env ist per .gitignore vom Repository
+# ausgeschlossen.
+#
+# Hinweis zum Ablauf im Projekt: Die Datenbank wird mit Compose gestartet
+# ("docker compose up -d db"), die App-Version bauen und starten Jenkins
+# bei jedem Build mit "docker build" und "docker run". Der app-Dienst unten
+# wird von der Pipeline nicht benutzt.
+
 services:
 
+  # ---------- PostgreSQL-Datenbank ----------
   db:
+    # Offizielles PostgreSQL-Image, Version 16
     image: postgres:16
+    # Fester Containername; unter diesem Namen erreicht die App die Datenbank
+    # (die Pipeline setzt DB_HOST=netwatch-db)
     container_name: netwatch-db
 
+    # Wird nur beim ALLERERSTEN Start ausgewertet, wenn das Volume noch leer ist.
+    # Spätere Änderungen an POSTGRES_PASSWORD wirken nicht auf eine bestehende
+    # Datenbank (dann Passwort mit ALTER USER ändern)
     environment:
       POSTGRES_DB: netwatch
       POSTGRES_USER: netwatch
+      # Wert kommt aus .env; fehlt DB_PASSWORD, bricht Compose mit dieser Meldung ab
       POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD fehlt in .env}
 
+    # Benanntes Volume für die Datenbankdateien: Die Daten bleiben erhalten,
+    # auch wenn der Container gelöscht oder neu erstellt wird
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+    # Gemeinsames Netzwerk mit der App
     networks:
       - netwatch
 
 
+  # ---------- NetWatch-App (Compose-Variante) ----------
   app:
+    # Baut das Image aus dem Dockerfile im aktuellen Ordner
     build: .
     container_name: netwatch-app
 
+    # Startet erst, nachdem der db-Container gestartet wurde
+    # (wartet aber nicht darauf, dass PostgreSQL wirklich bereit ist)
     depends_on:
       - db
 
+    # Zugangsdaten für app.py und webapp.py; sie lesen diese Variablen
+    # mit os.environ[...]. Innerhalb des Netzwerks ist die Datenbank
+    # unter dem Dienstnamen "db" erreichbar
     environment:
       DB_HOST: db
       DB_NAME: netwatch
       DB_USER: netwatch
       DB_PASSWORD: ${DB_PASSWORD}
 
+    # Dashboard vom Host aus auf Port 5000 erreichbar
     ports:
       - "5000:5000"
 
@@ -36,9 +67,13 @@ services:
       - netwatch
 
 
+# Benanntes Volume (Name postgres_data) für die Datenbankdaten
 volumes:
   postgres_data:
 
 
+# Eigenes Netzwerk. Compose stellt den Projektnamen (hier: Ordnername "netwatch")
+# voran, das Netzwerk heißt deshalb tatsächlich "netwatch_netwatch".
+# Genau diesen Namen verwendet die Pipeline bei "docker run --network"
 networks:
   netwatch:
