@@ -1,26 +1,47 @@
 <!DOCTYPE html>
+{# ==========================================================================
+   NetWatch – Dashboard-Template (Jinja2 / Flask)
+
+   Dieses Template wird von webapp.py gerendert (render_template) und bekommt
+   zwei Variablen übergeben:
+     results    Liste der letzten Prüfungen, neueste zuerst. Jede Zeile hat
+                die Spalten: [0] host, [1] port, [2] status (UP/DOWN),
+                [3] response_time_ms (oder None), [4] checked_at (datetime)
+     statistics Tuple mit den Kennzahlen:
+                [0] Gesamtzahl, [1] erfolgreiche (UP), [2] fehlgeschlagene (DOWN)
+
+   Kommentare in der Form {# ... #} sind Jinja-Kommentare und erscheinen nicht
+   im HTML, das an den Browser geschickt wird. Kommentare in der Form
+   <!-- ... --> sieht der Browser dagegen im Quelltext.
+   ========================================================================== #}
 <html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <!-- Lädt die Seite alle 30 Sekunden automatisch neu, damit neue Prüfungen erscheinen -->
     <meta http-equiv="refresh" content="30">
 
     <title>NetWatch Monitoring</title>
 
     <style>
+        /* ---------- Grundeinstellungen ---------- */
+        /* Abstände zurücksetzen, Größenberechnung inklusive Innenabstand */
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
         }
 
+        /* Schrift, Hintergrund und Textfarbe der ganzen Seite */
         body {
             font-family: Arial, Helvetica, sans-serif;
             background: #f4f6f8;
             color: #1f2937;
         }
 
+        /* ---------- Kopfzeile ---------- */
+        /* Dunkle Leiste: Titel links, "Dashboard aktiv" rechts */
         .header {
             background: #111827;
             color: white;
@@ -40,6 +61,7 @@
             font-size: 14px;
         }
 
+        /* Grüner Punkt mit Text "Dashboard aktiv" */
         .online {
             display: flex;
             align-items: center;
@@ -54,12 +76,16 @@
             border-radius: 50%;
         }
 
+        /* ---------- Seitenlayout ---------- */
+        /* Zentrierter Inhaltsbereich mit maximaler Breite */
         .container {
             max-width: 1200px;
             margin: 35px auto;
             padding: 0 20px;
         }
 
+        /* ---------- Kennzahlen-Karten (oben) ---------- */
+        /* Vier gleich breite Spalten nebeneinander */
         .cards {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -67,6 +93,7 @@
             margin-bottom: 30px;
         }
 
+        /* Weiße Karte mit abgerundeten Ecken und leichtem Schatten */
         .card {
             background: white;
             border-radius: 12px;
@@ -85,10 +112,12 @@
             font-weight: bold;
         }
 
+        /* Karte "Aktueller Status" hat einen grünen Streifen links */
         .status-card {
             border-left: 5px solid #22c55e;
         }
 
+        /* Textfarben für Erfolg (grün) und Fehler (rot) */
         .status-up {
             color: #16a34a;
         }
@@ -97,12 +126,15 @@
             color: #dc2626;
         }
 
+        /* ---------- Hauptbereich: zwei Spalten ---------- */
+        /* Linke Spalte doppelt so breit wie die rechte */
         .content {
             display: grid;
             grid-template-columns: 2fr 1fr;
             gap: 25px;
         }
 
+        /* Weißes Feld, das jeden Abschnitt umrahmt */
         .panel {
             background: white;
             border-radius: 12px;
@@ -115,6 +147,7 @@
             margin-bottom: 20px;
         }
 
+        /* Zeile "Überwachter Dienst" (Host links, Status-Badge rechts) */
         .monitor-info {
             display: flex;
             justify-content: space-between;
@@ -136,6 +169,7 @@
             font-size: 14px;
         }
 
+        /* ---------- Status-Badges (UP / DOWN) ---------- */
         .badge {
             padding: 7px 14px;
             border-radius: 20px;
@@ -143,16 +177,19 @@
             font-weight: bold;
         }
 
+        /* Grünes Badge für UP */
         .badge-up {
             background: #dcfce7;
             color: #166534;
         }
 
+        /* Rotes Badge für DOWN */
         .badge-down {
             background: #fee2e2;
             color: #991b1b;
         }
 
+        /* ---------- Tabelle "Letzte Prüfungen" ---------- */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -172,10 +209,13 @@
             font-size: 14px;
         }
 
+        /* Letzte Zeile ohne Trennlinie */
         tr:last-child td {
             border-bottom: none;
         }
 
+        /* ---------- Balkendiagramm ---------- */
+        /* Diese Klassen (.chart, .bar) werden im aktuellen Template nicht benutzt. */
         .chart {
             height: 220px;
             display: flex;
@@ -197,12 +237,14 @@
             background: #1d4ed8;
         }
 
+        /* Hinweistext, wenn noch keine Daten vorhanden sind */
         .empty {
             text-align: center;
             color: #6b7280;
             padding: 30px;
         }
 
+        /* Fußzeile */
         .footer {
             text-align: center;
             color: #9ca3af;
@@ -210,6 +252,8 @@
             margin: 35px 0;
         }
 
+        /* ---------- Responsives Verhalten ---------- */
+        /* Tablet (bis 900 px): zwei Karten pro Zeile, Hauptbereich einspaltig */
         @media (max-width: 900px) {
             .cards {
                 grid-template-columns: repeat(2, 1fr);
@@ -220,6 +264,7 @@
             }
         }
 
+        /* Handy (bis 600 px): eine Karte pro Zeile, kleinere Abstände */
         @media (max-width: 600px) {
             .header {
                 padding: 20px;
@@ -253,6 +298,7 @@
 
 <body>
 
+<!-- ==================== Kopfzeile ==================== -->
 <header class="header">
     <div>
         <h1>NetWatch</h1>
@@ -268,10 +314,13 @@
 
 <main class="container">
 
+    {# ---- Variablen vorbereiten ---- #}
+    {# Kennzahlen aus dem statistics-Tuple in lesbare Namen übernehmen #}
     {% set total = statistics[0] %}
     {% set up_count = statistics[1] %}
     {% set down_count = statistics[2] %}
 
+    {# "latest" ist die neueste Prüfung (erste Zeile von results). Gibt es noch keine Daten, bleibt es leer (none) #}
     {% if results %}
         {% set latest = results[0] %}
     {% else %}
@@ -279,12 +328,14 @@
     {% endif %}
 
 
-    <!-- Statistik -->
+    <!-- ==================== Statistik-Karten ==================== -->
     <section class="cards">
 
+        <!-- Karte 1: aktueller Status der neuesten Prüfung -->
         <div class="card status-card">
             <div class="card-title">Aktueller Status</div>
 
+            {# UP in grün, DOWN in rot, ohne Daten "---" #}
             {% if latest and latest[2] == "UP" %}
                 <div class="card-value status-up">UP</div>
             {% elif latest %}
@@ -295,9 +346,11 @@
         </div>
 
 
+        <!-- Karte 2: Antwortzeit der neuesten Prüfung -->
         <div class="card">
             <div class="card-title">Antwortzeit</div>
 
+            {# Bei DOWN gibt es keine Antwortzeit (NULL in der Datenbank), dann "---" #}
             {% if latest and latest[3] is not none %}
                 <div class="card-value">
                     {{ latest[3] }} ms
@@ -308,6 +361,7 @@
         </div>
 
 
+        <!-- Karte 3: Anzahl erfolgreicher Prüfungen -->
         <div class="card">
             <div class="card-title">Erfolgreiche Prüfungen</div>
 
@@ -317,6 +371,7 @@
         </div>
 
 
+        <!-- Karte 4: Anzahl fehlgeschlagener Prüfungen -->
         <div class="card">
             <div class="card-title">Fehlgeschlagene Prüfungen</div>
 
@@ -330,18 +385,21 @@
 
     <section class="content">
 
-        <!-- Linke Seite -->
+        <!-- ==================== Linke Seite ==================== -->
         <div>
 
+            <!-- Abschnitt: überwachter Dienst -->
             <div class="panel">
 
                 <h2>Überwachter Dienst</h2>
 
+                {# Nur anzeigen, wenn mindestens eine Prüfung vorhanden ist #}
                 {% if latest %}
 
                 <div class="monitor-info">
 
                     <div>
+                        {# Host und Port der neuesten Prüfung #}
                         <div class="host">
                             {{ latest[0] }}
                         </div>
@@ -351,6 +409,7 @@
                         </div>
                     </div>
 
+                    {# Badge je nach Status #}
                     {% if latest[2] == "UP" %}
 
                         <span class="badge badge-up">
@@ -369,6 +428,7 @@
 
                 {% else %}
 
+                {# Fallback, solange die Datenbank noch leer ist #}
                 <div class="empty">
                     Noch keine Monitoring-Daten vorhanden.
                 </div>
@@ -381,6 +441,7 @@
             <br>
 
 
+            <!-- Abschnitt: Tabelle der letzten Prüfungen -->
             <div class="panel">
 
                 <h2>Letzte Prüfungen</h2>
@@ -401,18 +462,22 @@
 
                     <tbody>
 
+                    {# Pro Prüfung eine Tabellenzeile (neueste oben) #}
                     {% for result in results %}
 
                         <tr>
 
+                            {# Host #}
                             <td>
                                 {{ result[0] }}
                             </td>
 
+                            {# Port #}
                             <td>
                                 {{ result[1] }}
                             </td>
 
+                            {# Status als farbiges Badge #}
                             <td>
 
                                 {% if result[2] == "UP" %}
@@ -431,6 +496,7 @@
 
                             </td>
 
+                            {# Antwortzeit in Millisekunden, bei DOWN ein Strich #}
                             <td>
 
                                 {% if result[3] is not none %}
@@ -441,6 +507,7 @@
 
                             </td>
 
+                            {# Zeitpunkt im deutschen Format TT.MM.JJJJ HH:MM:SS #}
                             <td>
                                 {{ result[4].strftime('%d.%m.%Y %H:%M:%S') }}
                             </td>
@@ -455,6 +522,7 @@
 
                 {% else %}
 
+                {# Fallback, solange noch keine Prüfungen gespeichert sind #}
                 <div class="empty">
                     Noch keine Prüfungen vorhanden.
                 </div>
@@ -466,9 +534,10 @@
         </div>
 
 
-        <!-- Rechte Seite -->
+        <!-- ==================== Rechte Seite ==================== -->
         <div>
 
+            <!-- Abschnitt: Gesamtzahl und Erfolgsquote -->
             <div class="panel">
 
                 <h2>Monitoring Übersicht</h2>
@@ -487,6 +556,7 @@
                     Erfolgsquote
                 </div>
 
+                {# Erfolgsquote = erfolgreiche / gesamt * 100, auf eine Nachkommastelle gerundet. Die Prüfung total > 0 verhindert eine Division durch null #}
                 {% if total > 0 %}
 
                     {% set percentage = (up_count / total * 100) | round(1) %}
@@ -509,6 +579,7 @@
             <br>
 
 
+            <!-- Abschnitt: Systeminformationen -->
             <div class="panel">
 
                 <h2>Systeminformationen</h2>
@@ -517,6 +588,7 @@
                     Überwachtes Ziel
                 </p>
 
+                {# Host:Port der neuesten Prüfung, z. B. google.de:443 #}
                 {% if latest %}
                     <strong>
                         {{ latest[0] }}:{{ latest[1] }}
@@ -531,6 +603,7 @@
                     Aktualisierung
                 </p>
 
+                {# Passt zum meta-refresh im Kopf der Seite (30 Sekunden) #}
                 <strong>
                     automatisch alle 30 Sekunden
                 </strong>
@@ -552,6 +625,7 @@
     </section>
 
 
+    <!-- ==================== Fußzeile ==================== -->
     <div class="footer">
         NetWatch Monitoring System · Automatisiertes Monitoring mit Docker, Jenkins und PostgreSQL
     </div>
