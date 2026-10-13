@@ -30,6 +30,7 @@ pipeline {
                  docker run -d \
                   --name netwatch-app \
                   --network netwatch_netwatch \
+                  --restart unless-stopped \
                   -p 5000:5000 \
                   -e DB_HOST=netwatch-db \
                   -e DB_NAME=netwatch \
